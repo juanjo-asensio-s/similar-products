@@ -2,10 +2,10 @@ package com.jjas.similar_products.domain.port.input;
 
 import com.jjas.similar_products.domain.model.Product;
 
-import java.util.List;
+import java.util.Set;
 
 public interface ProductUseCase {
 
-    List<Product> getSimilarProducts(String productId);
+    Set<Product> findSimilarProducts(String productId);
 
 }

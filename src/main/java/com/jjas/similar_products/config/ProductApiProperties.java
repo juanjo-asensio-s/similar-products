@@ -13,4 +13,8 @@ public class ProductApiProperties {
 
     private String baseUrl;
 
+    private String connectTimeoutMs;
+
+    private String readTimeoutMs;
+
 }

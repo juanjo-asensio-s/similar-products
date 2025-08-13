@@ -5,8 +5,8 @@ import com.jjas.similar_products.domain.port.input.ProductUseCase;
 import com.jjas.similar_products.domain.port.output.ExternalProductService;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -28,16 +28,16 @@ public class ProductService implements ProductUseCase {
      * @return the list of Products
      */
     @Override
-    public List<Product> getSimilarProducts(String productId) {
+    public Set<Product> findSimilarProducts(String productId) {
         Objects.requireNonNull(productId, "Product ID cannot be null");
         LOGGER.log(Level.INFO, String.format("Finding similar products from: " + productId));
 
-        List<String> similarProductIds = externalProductService.fetchSimilarProductIds(productId);
+        Set<String> similarProductIds = externalProductService.fetchSimilarProductIds(productId);
 
         return similarProductIds.stream()
                 .map(this::fetchProduct)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     /***
@@ -55,5 +55,5 @@ public class ProductService implements ProductUseCase {
             return null;
         }
     }
-    
+
 }

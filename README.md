@@ -21,6 +21,8 @@ Adapters), applying principles of resilience, caching, and clean code.
 - **Spring Cache + Caffeine** Used as a high-performance cache implementation
 - **Lombok** For boilerplate code reduction (getters/setters, constructors...)
 - **JUnit 5** & **Mockito** Unit testing
+- **Wiremock** for Integration testing
+- **Karate** E2E testing
 
 ## Architecture
 
@@ -28,17 +30,18 @@ This service is structured following Hexagonal (Ports & Adapters) Architecture:
 
 ```
 com.jjas.similar_products
-├── config                     -> Configuration and property classes
-├── domain
-│   ├── model                  -> Domain model (Product)
-│   └── port
-│       ├── input              -> Input ports (use cases)
-│       └── output             -> Output ports (external services)
-├── service                    -> Application logic (use case implementations)
-├── infrastructure.adapter     -> External API integration via WebClient
-├── rest                       -> REST controller (entrypoint)
-└── resources
-    └── application.yml        -> External API base URL and cache config
+├─ config                       # Configuration and property classes
+├─ domain/                      # Domain model & outbound ports
+│  ├─ model/
+│  └─ ports/
+├─ infrastructure/              # Adapters
+│  ├─ rest/                     # REST controller (public API)
+│  ├─ http/                     # External API adapter (outbound)
+│  │  └─ error/                 # Exceptions + global error handler (Problem+JSON)
+│  └─ mapper/                   # MapStruct mappers
+└─ generated/                   # OpenAPI generated code
+   ├─ similar/                  # Public API DTOs (server)
+   └─ external/                 # External API client (client)
 ```
 
 ## Features
@@ -48,7 +51,35 @@ com.jjas.similar_products
 - Resilience:
     - Circuit Breakers and Retries with fallback handling
 - Caching for both similar IDs and product detail responses
+- Interfaces mapped using MapStruct
 - Detailed unit testing with JUnit 5 & Mockito
+- Integration tests served with Wiremock
+- E2E tests implemented using karate
+
+## Public API Contract
+
+Defined in src/main/resources/openapi/similarProducts.yaml. OpenAPI generator produces DTOs and Spring interfaces.
+
+- Endpoint: GET /product/{productId}/similar
+- Response: 200 OK -> array of ProductDetail (generated DTO)
+
+### Errors
+
+Errors are returned using application/problem+json:
+
+```json
+{
+  "type": "about:blank",
+  "title": "UPSTREAM_FAILURE",
+  "status": 502,
+  "detail": "Server error fetching similar IDs",
+  "instance": "/product/50/similar",
+  "path": "/product/50/similar",
+  "timestamp": "2025-08-13T22:59:03.511687+02:00",
+  "code": "UPSTREAM_FAILURE"
+}
+
+```
 
 ## Running the Project
 
@@ -95,6 +126,23 @@ Run all tests using Maven:
 
 ```bash
 mvn test
+```
+
+Run all integration tests using Maven:
+
+```bash
+mvn integration-test
+```
+
+Run Karate tests:
+
+```bash
+mvn -Dtest=E2EKarateIT \
+-Dsurefire.useFile=false \
+-DtrimStackTrace=false \
+-Dkarate.logPrettyRequest=true \
+-Dkarate.logPrettyResponse=true \
+test
 ```
 
 ## Reference

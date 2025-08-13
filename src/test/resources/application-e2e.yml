@@ -1,0 +1,21 @@
+server:
+  port: 5001
+
+external:
+  product-api:
+    base-url: http://localhost:3001
+    connect-timeout-ms: 2000
+    read-timeout-ms: 3000
+
+
+spring:
+  cache:
+    type: none
+
+
+logging:
+  level:
+    org.springframework.cache: DEBUG
+
+
+

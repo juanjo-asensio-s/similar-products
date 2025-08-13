@@ -2,7 +2,7 @@ spring:
   application:
     name: similar-products
   cache:
-    cache-names: product,similar-ids
+    cache-names: product-details,similar-ids
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=10m
 server:
@@ -15,6 +15,8 @@ logging:
 external:
   product-api:
     base-url: http://localhost:3001
+    connect-timeout-ms: 2000
+    read-timeout-ms: 3000
 
 resilience4j:
   circuitbreaker:

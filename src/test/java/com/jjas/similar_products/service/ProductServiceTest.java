@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -27,7 +27,7 @@ class ProductServiceTest {
     void shouldReturnSimilarProductsWhenAllProductsExist() {
         // GIVEN
         String id = "1";
-        List<String> similarIds = List.of("2", "3");
+        Set<String> similarIds = Set.of("2", "3");
 
         Product product2 = new Product("2", "Shirt", new BigDecimal("19.99"), true);
         Product product3 = new Product("3", "Pants", new BigDecimal("29.99"), true);
@@ -37,7 +37,7 @@ class ProductServiceTest {
         when(externalProductService.fetchProductDetail("3")).thenReturn(product3);
 
         // WHEN
-        List<Product> result = productService.getSimilarProducts(id);
+        Set<Product> result = productService.findSimilarProducts(id);
 
         // THEN
         assertThat(result).containsExactly(product2, product3);
@@ -47,7 +47,7 @@ class ProductServiceTest {
     void shouldSkipNullProductsInSimilarList() {
         // GIVEN
         String id = "1";
-        List<String> similarIds = List.of("2", "3");
+        Set<String> similarIds = Set.of("2", "3");
 
         when(externalProductService.fetchSimilarProductIds(id)).thenReturn(similarIds);
         when(externalProductService.fetchProductDetail("2")).thenReturn(null);
@@ -55,42 +55,49 @@ class ProductServiceTest {
                 new Product("3", "Pants", new BigDecimal("29.99"), true));
 
         // WHEN
-        List<Product> result = productService.getSimilarProducts(id);
+        Set<Product> result = productService.findSimilarProducts(id);
 
         // THEN
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getId()).isEqualTo("3");
+        assertThat(result)
+                .extracting(Product::getId)
+                .containsExactlyInAnyOrder("3");
     }
 
     @Test
     void shouldSkipProductsThatThrowException() {
         // GIVEN
         String id = "1";
-        when(externalProductService.fetchSimilarProductIds(id)).thenReturn(List.of("2", "3"));
 
-        when(externalProductService.fetchProductDetail("2"))
+        when(externalProductService.fetchSimilarProductIds(id)).thenReturn(Set.of("1", "2", "3"));
+        when(externalProductService.fetchProductDetail("1"))
                 .thenThrow(new RuntimeException("Timeout"));
+        when(externalProductService.fetchProductDetail("2"))
+                .thenReturn(new Product("2", "Trousers", new BigDecimal("19.99"), true));
         when(externalProductService.fetchProductDetail("3"))
                 .thenReturn(new Product("3", "Pants", new BigDecimal("29.99"), true));
 
         // WHEN
-        List<Product> result = productService.getSimilarProducts(id);
+        Set<Product> result = productService.findSimilarProducts(id);
 
         // THEN
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getId()).isEqualTo("3");
+        assertThat(result).hasSize(2);
+        assertThat(result)
+                .extracting(Product::getId)
+                .containsExactlyInAnyOrder("3", "2");
     }
 
     @Test
     void shouldReturnEmptyListWhenSimilarIdsIsEmpty() {
         // GIVEN
         String id = "1";
-        when(externalProductService.fetchSimilarProductIds(id)).thenReturn(List.of());
+        when(externalProductService.fetchSimilarProductIds(id)).thenReturn(Set.of());
 
         // WHEN
-        List<Product> result = productService.getSimilarProducts(id);
+        Set<Product> result = productService.findSimilarProducts(id);
 
         // THEN
         assertThat(result).isEmpty();
     }
+
 }
